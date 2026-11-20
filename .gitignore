@@ -1,0 +1,17 @@
+# Gradle / Android build outputs
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing keys never go in the repo
+*.keystore
+*.jks
+*.p12
+*.pass
+lineage.bin
