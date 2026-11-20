@@ -71,6 +71,10 @@ class InsightTest {
         println(c)
         assertEquals(LocalDate.of(2026, 11, 19), c.due)
         assertTrue(c.title.contains("쿠폰"))
+        // 천 단위 쉼표에서 금액이 잘리지 않아야 한다 ("000원 할인 쿠폰" 버그)
+        val cp = DeadlineFinder.find(e(Source.APP, "쿠폰 만료 예정", "보유하신 5,000원 할인 쿠폰 유효기간이 11.30(월)까지입니다. 기간 내 사용해 주세요."))!!
+        assertEquals("5,000원 할인 쿠폰", cp.title)
+        assertEquals(LocalDate.of(2026, 11, 30), cp.due)
         val m = DeadlineFinder.find(e(Source.MAIL, "이수진", "제안서 검토 부탁드립니다\n초안 첨부합니다. 금요일까지 의견 부탁드려요."))!!
         assertEquals(LocalDate.of(2026, 11, 20), m.due)
         assertNull(DeadlineFinder.find(e(Source.SMS, "1588", "(광고) 블랙프라이데이 11/30까지 최대 70% 할인 쿠폰")))

@@ -262,11 +262,20 @@ data class Deadline(
 object DeadlineFinder {
     private val cue = Regex("""까지|유효\s?기간|만료|마감|기한|D\s?-\s?\d+|종료\s?예정""", RegexOption.IGNORE_CASE)
     private val adStrict = Regex("""\(광고\)|\[광고\]|수신\s?거부|무료\s?거부""")
-    private val coupon = Regex("""([가-힣A-Za-z0-9][가-힣A-Za-z0-9 ]{0,18}?)\s?(쿠폰|교환권|관람권|기프티콘|상품권|이용권|모바일\s?상품권)""")
+    // 천 단위 쉼표(5,000)는 숫자 사이에서만 허용해 금액이 잘리지 않게 한다.
+    private val coupon = Regex("""([가-힣A-Za-z0-9](?:[가-힣A-Za-z0-9 ]|(?<=\d),(?=\d{3})){0,18}?)\s?(쿠폰|교환권|관람권|기프티콘|상품권|이용권|모바일\s?상품권)""")
+    // "보유하신 5,000원 할인" → 금액부터: "5,000원 할인"
+    private val amount = Regex("""\d{1,3}(?:,\d{3})+(?:원|%)|\d+\s?(?:원|%|만원)""")
+
+    private fun couponTitle(m: MatchResult): String {
+        var head = m.groupValues[1].trim()
+        amount.find(head)?.let { head = head.substring(it.range.first) }
+        return "$head ${m.groupValues[2]}".trim()
+    }
 
     fun titleOf(e: Entry): String {
-        coupon.find(e.text)?.let { return "${it.groupValues[1].trim()} ${it.groupValues[2]}".trim() }
-        coupon.find(e.title)?.let { return "${it.groupValues[1].trim()} ${it.groupValues[2]}".trim() }
+        coupon.find(e.text)?.let { return couponTitle(it) }
+        coupon.find(e.title)?.let { return couponTitle(it) }
         if (e.source == Source.MAIL) return "${e.title} · ${e.text.lineSequence().first().take(24)}"
         val line = e.text.lineSequence().map { it.replace(Regex("""\[[^\]]*\]"""), "").trim() }.firstOrNull { it.length >= 4 } ?: e.title
         return line.take(28)
