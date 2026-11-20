@@ -43,7 +43,6 @@ class App : Application() {
         val certs = info.signingInfo?.apkContentsSigners.orEmpty().map { sig ->
             MessageDigest.getInstance("SHA-256").digest(sig.toByteArray()).joinToString("") { "%02x".format(it) }
         }
-        // Android 13 이상은 새 키, Android 12는 키 교체 이전의 원래 키로 확인됨 (둘 다 우리 키)
         val ok = certs.any { it in EXPECTED_SIGNERS }
         val ver = info.longVersionCode.toInt()
         if (Prefs.lastVersion(this) != ver) {
@@ -57,10 +56,12 @@ class App : Application() {
     companion object {
         const val CH_JOURNAL = "journal"
         const val CH_REMIND = "remind"
-        /** 서명 키 인증서 SHA-256: 2.1부터 쓰는 새 키, 키 교체 이전 원래 키 (Android 12에서 보이는 값) */
+        /**
+         * 서명 키 인증서 SHA-256 (2.7-fold6부터 이 폰 전용으로 새로 만든 키, 키 교체 없음)
+         * 다른 키로 서명된 APK가 설치되면 보안 기록에 "서명이 예상과 달라요"가 남음
+         */
         val EXPECTED_SIGNERS = setOf(
-            "20b05c54484da1aabe5fd9cdedb1aab420b164fe34ec899d50954009a3ef4e72",
-            "f9a18c0ff29af5fc1c7aae3f057e414728ce74b8effbc09a881f7df7d9327ee9",
+            "87c4d061eb5357dee46d9358da278f8d37b05d6261d916966fdc3d375feb57c5",
         )
     }
 }

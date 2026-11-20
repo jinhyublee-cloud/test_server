@@ -145,4 +145,4 @@
 ./gradlew testReleaseUnitTest assembleRelease
 ```
 
-서명 키는 저장소에 넣지 않습니다. 빌드 후 `KEYS_DIR=<키 폴더> ./sign-release.sh`로 서명하세요 (키 묶음은 별도로 받아 안전한 곳에 보관). 같은 키·이력(lineage)으로 서명해야 기존 기록이 유지된 채 업데이트됩니다.
+서명 키는 저장소에 넣지 않습니다. 빌드 후 `KEYS_DIR=<키 폴더> ./sign-release.sh`로 서명하세요. 2.7-fold6부터는 이 폰 전용 단일 키(`release.p12` + `release.pass`)를 씁니다. 키 SHA-256은 `87c4d061…57c5`(전체 값은 `App.kt`의 `EXPECTED_SIGNERS`)이고, 같은 키로 서명해야 기존 기록이 유지된 채 업데이트됩니다. 키를 잃어버리면 앱을 지우고 다시 설치해야 하므로(기록 삭제) 키와 비밀번호를 따로 안전하게 보관하세요.
