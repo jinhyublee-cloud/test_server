@@ -3,6 +3,10 @@ package com.mydaylog.app.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mydaylog.app.Prefs
@@ -89,10 +94,7 @@ fun MoneyCalendar(onChanged: () -> Unit = {}) {
         val d = days.orEmpty()
         val spend = d.values.sumOf { it.spend }
         val income = d.values.sumOf { it.income }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Metric("지출", won(spend), cs.onSurface, Modifier.weight(1f))
-            Metric("수입", "+" + won(income), ok, Modifier.weight(1f))
-        }
+        MetricPair(Triple("지출", won(spend), cs.onSurface), Triple("수입", "+" + won(income), ok))
         val out = d.values.sumOf { it.excludedCount }
         if (out > 0) Text("합계에서 뺀 항목 ${out}건은 금액에 넣지 않았어요", fontSize = 12.sp, color = cs.onSurfaceVariant)
         val cutoff = today.minusDays(Prefs.retentionDays(ctx).toLong())
@@ -103,30 +105,34 @@ fun MoneyCalendar(onChanged: () -> Unit = {}) {
             Text(w, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f),
                 color = when (i) { 5 -> cs.primary; 6 -> cs.error; else -> cs.onSurfaceVariant })
         } }
+        // 날짜 칸은 7등분이라 아주 좁음 (접은 화면 약 45dp): 칸 안 금액 글자는 폰 글자 크기를 1.1배까지만 따라감
+        val fontScale = LocalDensity.current.fontScale
+        val cellFont = (10f * minOf(fontScale, 1.1f) / fontScale).sp
         val lead = ym.atDay(1).dayOfWeek.value - 1
         val cells = List(lead) { 0 } + (1..ym.lengthOfMonth()).toList()
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             cells.chunked(7).forEach { week ->
-                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                // 글자를 키워도 금액이 잘리지 않게: 칸 높이는 최소 58dp, 내용이 많으면 그 주 전체가 같이 늘어남
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     (0 until 7).forEach { i ->
                         val n = week.getOrNull(i) ?: 0
-                        if (n == 0) { Box(Modifier.weight(1f).height(58.dp)); return@forEach }
+                        if (n == 0) { Box(Modifier.weight(1f).heightIn(min = 58.dp)); return@forEach }
                         val date = ym.atDay(n)
                         val m = d[date]
                         val future = date.isAfter(today)
                         val selected = date == sel
                         Column(
-                            Modifier.weight(1f).height(58.dp).clip(RoundedCornerShape(10.dp))
+                            Modifier.weight(1f).heightIn(min = 58.dp).fillMaxHeight().clip(RoundedCornerShape(10.dp))
                                 .background(if (selected) cs.primaryContainer else Color.Transparent)
                                 .then(if (date == today) Modifier.border(1.5.dp, cs.primary, RoundedCornerShape(10.dp)) else Modifier)
                                 .clickable(enabled = !future) { sel = date }
-                                .padding(top = 4.dp, start = 2.dp, end = 2.dp),
+                                .padding(top = 4.dp, bottom = 4.dp, start = 2.dp, end = 2.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text("$n", fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                 color = when { future -> cs.outline; selected -> cs.onPrimaryContainer; i == 6 -> cs.error; i == 5 -> cs.primary; else -> cs.onSurface })
-                            if (m != null && m.spend > 0) Text("-" + MoneyDays.compact(m.spend), fontSize = 10.sp, maxLines = 1, color = cs.onSurface)
-                            if (m != null && m.income > 0) Text("+" + MoneyDays.compact(m.income), fontSize = 10.sp, maxLines = 1, color = ok)
+                            if (m != null && m.spend > 0) Text("-" + MoneyDays.compact(m.spend), fontSize = cellFont, maxLines = 1, softWrap = false, color = cs.onSurface)
+                            if (m != null && m.income > 0) Text("+" + MoneyDays.compact(m.income), fontSize = cellFont, maxLines = 1, softWrap = false, color = ok)
                         }
                     }
                 }
@@ -146,7 +152,7 @@ fun MoneyCalendar(onChanged: () -> Unit = {}) {
         } else {
             day.items.forEach { p ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(timeOf(p.entry.ts), fontSize = 13.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(42.dp))
+                    Text(timeOf(p.entry.ts), fontSize = 13.sp, color = cs.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 42.dp))
                     Column(Modifier.weight(1f)) {
                         Text(p.label, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             color = if (p.excluded) cs.onSurfaceVariant else cs.onSurface)

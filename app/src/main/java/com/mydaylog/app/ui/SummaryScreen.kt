@@ -2,6 +2,7 @@ package com.mydaylog.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,7 +135,7 @@ fun SummaryScreen(day: LocalDate, onDay: (LocalDate) -> Unit) {
             PanelHeader(if (today) "오늘의 흐름" else "하루의 흐름")
             periods.forEach { p ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(p, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(36.dp).padding(top = 1.dp))
+                    Text(p, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, softWrap = false, modifier = Modifier.widthIn(min = 36.dp).padding(top = 1.dp))
                     val items = JournalParse.bullets(sec[p])
                     if (items.isNotEmpty()) BulletList(items) else Text(sec[p]!!, fontSize = 14.sp, lineHeight = 21.sp)
                 }

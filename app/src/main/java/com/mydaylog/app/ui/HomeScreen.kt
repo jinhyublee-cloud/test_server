@@ -3,9 +3,12 @@ package com.mydaylog.app.ui
 import com.mydaylog.app.data.MoneyExclude
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -319,7 +322,7 @@ private fun UpcomingCard(list: List<Entry>) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(Modifier.width(56.dp)) {
+                Column(Modifier.widthIn(min = 56.dp)) {
                     val d = dateOf(e.ts)
                     if (d != today) Text(
                         if (d == today.plusDays(1)) "내일" else "${d.monthValue}/${d.dayOfMonth}",
@@ -380,7 +383,34 @@ internal fun Metric(label: String, value: String, color: Color, modifier: Modifi
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color)
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1, softWrap = false)
+    }
+}
+
+/**
+ * 금액 두 개 (지출·입금 등): 나란히 들어가면 나란히, 접은 화면처럼 좁거나 글자를 키워서
+ * 안 들어가면 위아래로 쌓음. 금액이 "2,350,00 / 0원"처럼 쪼개지거나 잘리지 않게.
+ * 글자 폭을 재지 않고 어림(숫자·쉼표 0.62em, 한글 1em)으로 판단해 그리기가 반복되지 않음.
+ */
+@Composable
+internal fun MetricPair(
+    a: Triple<String, String, Color>, b: Triple<String, String, Color>,
+) {
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        fun need(v: String) = v.sumOf { c -> if (c.code < 128) 0.62 else 1.0 } * 20 * fontScale
+        val each = (maxWidth.value - 10) / 2 - 24  // 칸 사이 10dp, 칸 안쪽 여백 12dp x 2
+        if (maxOf(need(a.second), need(b.second)) <= each) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Metric(a.first, a.second, a.third, Modifier.weight(1f))
+                Metric(b.first, b.second, b.third, Modifier.weight(1f))
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Metric(a.first, a.second, a.third, Modifier.fillMaxWidth())
+                Metric(b.first, b.second, b.third, Modifier.fillMaxWidth())
+            }
+        }
     }
 }
 
@@ -402,14 +432,11 @@ private fun MoneyCard(d: Dash, today: Boolean, onCalendar: () -> Unit, onChanged
         )
         Text("결제 ${d.money.count { !it.deposit }} · 입금 ${d.money.count { it.deposit }}" + if (out > 0) " · 합계 제외 $out" else "",
             fontSize = 12.sp, color = cs.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Metric("지출", won(d.spend), cs.onSurface, Modifier.weight(1f))
-            Metric("입금", "+" + won(d.deposit), ok, Modifier.weight(1f))
-        }
+        MetricPair(Triple("지출", won(d.spend), cs.onSurface), Triple("입금", "+" + won(d.deposit), ok))
         (if (all) d.money else d.money.takeLast(6)).forEach { m ->
             val strike = if (m.excluded) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(timeOf(m.ts), fontSize = 14.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(44.dp))
+                Text(timeOf(m.ts), fontSize = 14.sp, color = cs.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 44.dp))
                 Text(m.label, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     color = if (m.excluded) cs.onSurfaceVariant else cs.onSurface)
                 if (m.excluded) Tag("합계 제외", cs.onSurfaceVariant, cs.surfaceContainerHighest)
@@ -517,13 +544,13 @@ private fun RecurringMonthCard(list: List<com.mydaylog.app.insight.Recurring>, o
     val unpaid = conf.filter { !it.paidThisMonth }.sortedBy { it.next }
     Panel {
         PanelHeader("이번 달 정기 결제", action = "모두 보기", onAction = onMore)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Metric("${LocalDate.now().monthValue}월 합계 · ${conf.size}건", won(total), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-            Metric("남은 결제 · ${unpaid.size}건", won(unpaid.sumOf { it.amount }), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-        }
+        MetricPair(
+            Triple("${LocalDate.now().monthValue}월 합계 · ${conf.size}건", won(total), MaterialTheme.colorScheme.onSurface),
+            Triple("남은 결제 · ${unpaid.size}건", won(unpaid.sumOf { it.amount }), MaterialTheme.colorScheme.onSurface),
+        )
         unpaid.take(2).forEach { r ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("${r.next.monthValue}/${r.next.dayOfMonth}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(52.dp))
+                Text("${r.next.monthValue}/${r.next.dayOfMonth}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 52.dp))
                 Text(r.merchant, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(won(r.amount), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }

@@ -17,6 +17,16 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -253,6 +263,20 @@ private fun VaultErrorScreen(msg: String) = CenterMessage(
     null,
 ) {}
 
+/** 하단 탭 (번호는 화면 상태·알림에서 쓰는 값이라 바꾸지 않음) */
+private val NAV_TABS = listOf(
+    Triple(0, "홈", R.drawable.ic_nav_home),
+    Triple(1, "타임라인", R.drawable.ic_nav_list),
+    Triple(5, "물어보기", R.drawable.ic_ask),
+    Triple(2, "챙길 것", R.drawable.ic_nav_inbox),
+    Triple(3, "요약", R.drawable.ic_sparkle),
+)
+
+/** 이 폭 이상이면 (폴드 펼친 화면, 태블릿) 왼쪽 세로 탭 + 가운데 정렬된 내용 */
+private val WIDE_MIN = 600.dp
+/** 펼친 화면에서 글줄이 너무 길어지지 않게 내용 폭 상한 */
+private val CONTENT_MAX = 720.dp
+
 @Composable
 fun MainScreen(
     tab: Int, onTab: (Int) -> Unit,
@@ -260,6 +284,34 @@ fun MainScreen(
     filter: Source?, onFilter: (Source?) -> Unit,
     inboxSeg: Int, onInboxSeg: (Int) -> Unit,
 ) {
+    val content: @Composable () -> Unit = {
+        when (tab) {
+            0 -> HomeScreen(
+                day, onDay,
+                openTimeline = { onFilter(it); onTab(1) },
+                openSummary = { onTab(3) },
+                openSettings = { onTab(4) },
+                openInbox = { onInboxSeg(it); onTab(2) },
+            )
+            1 -> TimelineScreen(day, onDay, filter, onFilter)
+            2 -> InboxScreen(inboxSeg, onInboxSeg)
+            3 -> SummaryScreen(day, onDay)
+            5 -> AskScreen()
+            else -> SettingsScreen(onBack = { onTab(0) })
+        }
+    }
+    // 화면 크기가 아니라 이 앱 창의 실제 폭으로 판단 (접기·펴기, 화면 분할, 팝업 창 모두 대응)
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxWidth >= WIDE_MIN) WideLayout(tab, onTab, content) else CompactLayout(tab, onTab, content)
+    }
+}
+
+@Composable
+private fun NavLabel(text: String) = Text(text, maxLines = 1, softWrap = false)
+
+/** 접은 화면(커버)·일반 폰: 아래쪽 탭 */
+@Composable
+private fun CompactLayout(tab: Int, onTab: (Int) -> Unit, content: @Composable () -> Unit) {
     val itemColors = NavigationBarItemDefaults.colors(
         selectedIconColor = MaterialTheme.colorScheme.primary,
         selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -269,29 +321,38 @@ fun MainScreen(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                NavigationBarItem(tab == 0, { onTab(0) }, { Icon(painterResource(R.drawable.ic_nav_home), null) }, label = { Text("홈") }, colors = itemColors)
-                NavigationBarItem(tab == 1, { onTab(1) }, { Icon(painterResource(R.drawable.ic_nav_list), null) }, label = { Text("타임라인") }, colors = itemColors)
-                NavigationBarItem(tab == 5, { onTab(5) }, { Icon(painterResource(R.drawable.ic_ask), null) }, label = { Text("물어보기") }, colors = itemColors)
-                NavigationBarItem(tab == 2, { onTab(2) }, { Icon(painterResource(R.drawable.ic_nav_inbox), null) }, label = { Text("챙길 것") }, colors = itemColors)
-                NavigationBarItem(tab == 3, { onTab(3) }, { Icon(painterResource(R.drawable.ic_sparkle), null) }, label = { Text("요약") }, colors = itemColors)
+                NAV_TABS.forEach { (id, label, icon) ->
+                    NavigationBarItem(tab == id, { onTab(id) }, { Icon(painterResource(icon), null) }, label = { NavLabel(label) }, colors = itemColors)
+                }
             }
         }
     ) { pad ->
         // 키보드가 올라오면 입력창이 가려지지 않게 (하단 바 높이는 빼고)
-        Box(Modifier.padding(pad).consumeWindowInsets(pad).imePadding().fillMaxSize()) {
-            when (tab) {
-                0 -> HomeScreen(
-                    day, onDay,
-                    openTimeline = { onFilter(it); onTab(1) },
-                    openSummary = { onTab(3) },
-                    openSettings = { onTab(4) },
-                    openInbox = { onInboxSeg(it); onTab(2) },
-                )
-                1 -> TimelineScreen(day, onDay, filter, onFilter)
-                2 -> InboxScreen(inboxSeg, onInboxSeg)
-                3 -> SummaryScreen(day, onDay)
-                5 -> AskScreen()
-                else -> SettingsScreen(onBack = { onTab(0) })
+        Box(Modifier.padding(pad).consumeWindowInsets(pad).imePadding().fillMaxSize()) { content() }
+    }
+}
+
+/** 펼친 화면: 왼쪽 세로 탭 + 가운데 내용 (폭 상한) */
+@Composable
+private fun WideLayout(tab: Int, onTab: (Int) -> Unit, content: @Composable () -> Unit) {
+    val itemColors = NavigationRailItemDefaults.colors(
+        selectedIconColor = MaterialTheme.colorScheme.primary,
+        selectedTextColor = MaterialTheme.colorScheme.primary,
+        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+    )
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { pad ->
+        Row(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize()) {
+            NavigationRail(containerColor = MaterialTheme.colorScheme.surface, windowInsets = WindowInsets(0)) {
+                // 펼친 화면에서 엄지가 닿기 쉽게 세로 가운데
+                Spacer(Modifier.weight(1f))
+                NAV_TABS.forEach { (id, label, icon) ->
+                    NavigationRailItem(tab == id, { onTab(id) }, { Icon(painterResource(icon), null) }, label = { NavLabel(label) }, colors = itemColors)
+                    Spacer(Modifier.height(4.dp))
+                }
+                Spacer(Modifier.weight(1f))
+            }
+            Box(Modifier.weight(1f).fillMaxHeight().imePadding(), contentAlignment = Alignment.TopCenter) {
+                Box(Modifier.widthIn(max = CONTENT_MAX).fillMaxSize()) { content() }
             }
         }
     }

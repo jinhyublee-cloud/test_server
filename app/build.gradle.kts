@@ -39,6 +39,21 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            // 화면 테스트(Robolectric)용. 실제 앱(APK)에는 영향 없음
+            isIncludeAndroidResources = true
+            all {
+                // 테스트 묶음(클래스)마다 새 JVM: 화면 테스트가 앞선 테스트의 상태에 영향받지 않게
+                it.forkEvery = 1
+                // 화면 테스트는 디버그 빌드에서만 (테스트용 화면이 디버그에만 들어 있음)
+                if (it.name.contains("Release")) it.exclude("**/Fold*")
+                it.systemProperty("robolectric.graphicsMode", "NATIVE")
+                it.systemProperty("roborazzi.test.record", "true")
+                it.systemProperty("roborazzi.record.filePathStrategy", "relativePathFromRoborazziContextOutputDirectory")
+            }
+        }
+    }
 }
 
 kotlin {
@@ -65,4 +80,12 @@ dependencies {
 dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+    // 폴드 화면 크기별 스크린샷 테스트 (테스트 전용, APK에 들어가지 않음)
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.32.2")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.32.2")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

@@ -80,10 +80,7 @@ fun MoneyPicker(from: LocalDate, to: LocalDate, title: String, onClose: (changed
                     val spend = list.filter { !it.deposit && it.id in keep }.sumOf { it.amount }
                     val dep = list.filter { it.deposit && it.id in keep }.sumOf { it.amount }
                     val out = list.count { it.id !in keep }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Metric("지출 합계", won(spend), cs.onSurface, Modifier.weight(1f))
-                        Metric("입금 합계", "+" + won(dep), successColor(), Modifier.weight(1f))
-                    }
+                    MetricPair(Triple("지출 합계", won(spend), cs.onSurface), Triple("입금 합계", "+" + won(dep), successColor()))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilterChip(kind == 0, { kind = 0 }, { Text("전체 ${list.size}") })
                         FilterChip(kind == 1, { kind = 1 }, { Text("결제 ${list.count { !it.deposit }}") })

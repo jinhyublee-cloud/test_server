@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -243,7 +244,7 @@ private fun PlansPane(
             done.forEachIndexed { i, v ->
                 if (i > 0) Divider()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Column(Modifier.width(60.dp)) {
+                    Column(Modifier.widthIn(min = 60.dp)) {
                         Text(md(v.plan.at.toLocalDate()), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(if (v.plan.hasTime) v.plan.at.toLocalTime().toString().take(5) else "종일", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
@@ -339,7 +340,7 @@ private fun PlanCard(v: PlanView, onAdd: () -> Unit, onEdit: () -> Unit, onDelet
 @Composable
 private fun Field(label: String, value: String, missing: Boolean = false) {
     Row {
-        Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(52.dp))
+        Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 52.dp))
         Text(value, fontSize = 14.sp, fontWeight = if (missing) FontWeight.Normal else FontWeight.Medium,
             color = if (missing) Color(0xFF9A6A00) else MaterialTheme.colorScheme.onSurface)
     }
@@ -397,8 +398,8 @@ fun DBadge(d: Long, big: Boolean = true) {
     }
     Text(
         if (d == 0L) "D-day" else "D-$d", fontSize = if (big) 15.sp else 14.sp, fontWeight = FontWeight.Bold, color = fg,
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        modifier = Modifier.width(if (big) 56.dp else 50.dp).clip(RoundedCornerShape(10.dp)).background(bg).padding(vertical = 7.dp),
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center, softWrap = false,
+        modifier = Modifier.widthIn(min = if (big) 56.dp else 50.dp).clip(RoundedCornerShape(10.dp)).background(bg).padding(vertical = 7.dp),
     )
 }
 
@@ -442,7 +443,7 @@ private fun DeadlinesPane(
             past.take(10).forEachIndexed { i, v ->
                 if (i > 0) Divider()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(md(v.dl.due), fontSize = 13.sp, color = cs.onSurfaceVariant, modifier = Modifier.width(64.dp))
+                    Text(md(v.dl.due), fontSize = 13.sp, color = cs.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 64.dp))
                     Text(v.dl.title, fontSize = 14.sp, color = cs.onSurfaceVariant, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         textDecoration = if (v.status == "done") TextDecoration.LineThrough else TextDecoration.None)
                     if (v.status == "done") TextButton(onClick = { onDone(v, false) }) { Text("완료", fontSize = 12.sp, color = successColor()) }
@@ -518,7 +519,7 @@ private fun RecurringPane(
         confirmed.forEachIndexed { i, r ->
             if (i > 0) Divider()
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.widthIn(min = 44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("매월", fontSize = 12.sp, color = cs.onSurfaceVariant)
                     Text("${r.day}일", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
@@ -627,7 +628,7 @@ private fun PaymentsPanel(payments: List<com.mydaylog.app.insight.Payment>, excl
             Divider()
             (if (all) payments else payments.take(8)).forEach { p ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Column(Modifier.width(52.dp)) {
+                    Column(Modifier.widthIn(min = 52.dp)) {
                         Text(md(dateOf(p.ts)).substringBefore("("), fontSize = 13.sp, color = cs.onSurfaceVariant)
                         Text(timeOf(p.ts), fontSize = 12.sp, color = cs.onSurfaceVariant)
                     }

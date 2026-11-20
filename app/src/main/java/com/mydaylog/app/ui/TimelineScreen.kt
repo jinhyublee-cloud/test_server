@@ -3,6 +3,7 @@ package com.mydaylog.app.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -195,7 +196,7 @@ private fun TimelineRow(r: TRow, first: Boolean, last: Boolean, now: Long) {
         ) {
             Text(
                 if (r.e.allDay) "종일" else timeOf(r.e.ts), fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(40.dp).padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, softWrap = false, modifier = Modifier.widthIn(min = 40.dp).padding(top = 8.dp),
             )
             SourceIcon(r.e.source)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

@@ -102,6 +102,7 @@ fun AppTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) DarkScheme else LightScheme, content = content)
 }
 
+
 data class SrcColor(val fg: Color, val bg: Color)
 
 @Composable
