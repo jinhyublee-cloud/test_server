@@ -13,7 +13,8 @@ android {
         minSdk = 31
         targetSdk = 35
         versionCode = 10
-        versionName = "2.7"
+        // 번호(2.7, versionCode 10)는 그대로 두고 폴드6 대응판 표시만 붙임
+        versionName = "2.7-fold6"
     }
 
     // 서명은 빌드 밖에서 함 (sign-release.sh). 키와 비밀번호는 저장소에 두지 않음 (S-01)
